@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Audio Machine</title>
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Press+Start+2P&family=Special+Elite&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      tailwind = {
+        config: {
+          theme: {
+            extend: {
+              fontFamily: {
+                sans: ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+                mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
+                typewriter: ["Special Elite", "serif"],
+                pixel: ["Press Start 2P", "monospace"]
+              }
+            }
+          }
+        }
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        background: #ffffff;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+        background: #ffffff;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      canvas {
+        display: block;
+      }
+
+      .hidden-input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+        width: 0;
+        height: 0;
+      }
+
+      .crt-overlay::before,
+      .crt-overlay::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .crt-overlay::before {
+        background:
+          linear-gradient(rgba(18, 16, 16, 0) 50%, var(--crt-color, rgba(0, 0, 0, 0.25)) 50%),
+          linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+        background-size: 100% 2px, 3px 100%;
+        opacity: var(--crt-opacity, 0.05);
+      }
+
+      .crt-overlay::after {
+        background: rgba(18, 16, 16, var(--crt-scan-opacity, 0.1));
+        animation: scanline var(--crt-duration, 8s) linear infinite;
+      }
+
+      .waveform-canvas {
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+      }
+
+      .slider-reset,
+      .slider-reset::-webkit-slider-thumb,
+      .slider-reset::-moz-range-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      .slider-reset {
+        background: transparent;
+      }
+
+      .slider-reset:focus {
+        outline: none;
+      }
+
+      .arcade-range::-webkit-slider-runnable-track {
+        height: 6px;
+        background: #fca311;
+        border: 1px solid #14253d;
+      }
+
+      .arcade-range::-webkit-slider-thumb {
+        width: 24px;
+        height: 24px;
+        border-radius: 9999px;
+        background: #fca311;
+        margin-top: -10px;
+        border: none;
+        box-shadow: 0 0 15px rgba(252, 163, 17, 0.6);
+      }
+
+      .arcade-range::-moz-range-track {
+        height: 6px;
+        background: #fca311;
+        border: 1px solid #14253d;
+      }
+
+      .arcade-range::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        border-radius: 9999px;
+        background: #fca311;
+        border: none;
+        box-shadow: 0 0 15px rgba(252, 163, 17, 0.6);
+      }
+
+      .piano-volume {
+        accent-color: #a855f7;
+      }
+
+      .noise-grid {
+        background-image: radial-gradient(#a855f7 1px, transparent 1px);
+        background-size: 40px 40px;
+      }
+
+      @keyframes scanline {
+        0% {
+          transform: translateY(-100%);
+        }
+        100% {
+          transform: translateY(100%);
+        }
+      }
+
+      @keyframes bob {
+        0%, 100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-4px);
+        }
+      }
+
+      .bobbing {
+        animation: bob 1.8s ease-in-out infinite;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./audioapp/app.js"></script>
+  </body>
+</html>
