@@ -32,6 +32,8 @@ export default class SlowedController extends BaseController {
     this.offset = 0;
     this.startTime = 0;
     this.dragging = false;
+    this.dragDepth = 0;
+    this.loadingFile = false;
     this.progressFrame = 0;
     this.visualizerFrame = 0;
     this.sourceNode = null;
@@ -67,9 +69,10 @@ export default class SlowedController extends BaseController {
   }
 
   macosTemplate() {
+    const slimeActive = this.isSlimeActive();
     return `
       <div
-        class="min-h-screen bg-[#D1D5DB] flex items-center justify-center p-8 font-sans transition-colors duration-300 ${this.dragging ? "bg-orange-50" : ""}"
+        class="min-h-screen bg-[#D1D5DB] flex items-center justify-center p-8 font-sans transition-colors duration-300 ${slimeActive ? "bg-[#ECFDF5]" : ""}"
         data-role="dropzone"
       >
         <div class="w-full max-w-6xl bg-[#F6F6F6] rounded-[12px] shadow-[0_30px_60px_-12px_rgba(0,0,0,0.25),0_18px_36px_-18px_rgba(0,0,0,0.3)] border border-white/20 overflow-hidden flex flex-col h-[800px]">
@@ -90,11 +93,13 @@ export default class SlowedController extends BaseController {
           </div>
           <div class="flex flex-1 overflow-hidden">
             <div class="flex-1 bg-white flex flex-col overflow-hidden relative">
-              ${this.dragging ? `
-                <div class="absolute inset-0 z-50 bg-[#FCA311]/10 backdrop-blur-sm flex items-center justify-center border-4 border-dashed border-[#FCA311] m-4 rounded-xl pointer-events-none">
-                  <div class="bg-white px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 text-[#FCA311]">
-                    ${icon("upload", 20, "animate-bounce")}
-                    <span class="text-lg font-semibold text-gray-800">Drop audio file to import</span>
+              ${slimeActive ? `
+                <div class="absolute inset-0 z-50 bg-[#22C55E]/10 backdrop-blur-sm flex items-center justify-center border-4 border-dashed border-[#22C55E] m-4 rounded-xl pointer-events-none overflow-hidden">
+                  <div class="absolute -left-10 bottom-0 w-40 h-24 rounded-[999px] bg-[#22C55E]/30 blur-2xl animate-pulse"></div>
+                  <div class="absolute right-8 top-8 w-24 h-24 rounded-full bg-[#86EFAC]/30 blur-2xl animate-pulse"></div>
+                  <div class="bg-white px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 text-[#16A34A] relative">
+                    ${icon(this.loadingFile ? "refresh" : "upload", 20, this.loadingFile ? "animate-spin" : "animate-bounce")}
+                    <span class="text-lg font-semibold text-gray-800">${this.loadingFile ? "Loading audio into the slime tank" : "Drop audio file to import"}</span>
                   </div>
                 </div>
               ` : ""}
@@ -152,8 +157,11 @@ export default class SlowedController extends BaseController {
   }
 
   arcadeTemplate() {
+    const slimeActive = this.isSlimeActive();
+    const signalOuter = slimeActive ? "border-[#22C55E] bg-[#22C55E]/15" : "border-[#FCA311] bg-[#FCA311]/10";
+    const signalInner = slimeActive ? "bg-[#22C55E]/35" : "bg-[#FCA311]/30";
     return `
-      <div class="min-h-screen bg-[#D1D5DB] text-white font-['Special_Elite'] text-[12px] overflow-hidden relative flex items-center justify-center p-8">
+      <div class="min-h-screen bg-[#D1D5DB] text-white font-['Special_Elite'] text-[12px] overflow-hidden relative flex items-center justify-center p-8 transition-colors duration-300 ${slimeActive ? "bg-[#DCFCE7]" : ""}" data-role="dropzone">
         <div class="w-full max-w-6xl mx-auto p-6 pt-12 relative z-10">
           <div class="flex justify-between items-center mb-6">
             <div class="flex gap-2">
@@ -174,13 +182,17 @@ export default class SlowedController extends BaseController {
                   <div>
                     <p class="text-[#14253D] text-[8px] mb-1 uppercase font-bold">Source Material:</p>
                     <p class="text-slate-900 truncate text-[14px] font-bold max-w-[240px]">${safeText(this.fileName || "WAITING_FOR_INPUT...")}</p>
+                    <div class="mt-3">
+                      ${this.renderDropHud("arcade")}
+                    </div>
                   </div>
                   <div class="flex flex-col items-center gap-1">
                     <div class="relative w-12 h-12 flex items-center justify-center" data-role="signal-ball">
-                      <div class="absolute inset-0 rounded-full border border-[#FCA311] bg-[#FCA311]/10"></div>
-                      <div class="absolute inset-[10px] rounded-full bg-[#FCA311]/30"></div>
+                      <div class="absolute inset-0 rounded-full border ${signalOuter}"></div>
+                      <div class="absolute inset-[10px] rounded-full ${signalInner}"></div>
+                      ${slimeActive ? `<div class="absolute inset-x-2 bottom-[3px] h-3 rounded-[999px] bg-[#22C55E]/40 blur-[2px] animate-pulse"></div>` : ""}
                     </div>
-                    <p class="text-[6px] text-[#FCA311] font-bold tracking-widest">SIGNAL</p>
+                    <p class="text-[6px] ${slimeActive ? "text-[#16A34A]" : "text-[#FCA311]"} font-bold tracking-widest">${this.loadingFile ? "SLIME" : "SIGNAL"}</p>
                   </div>
                 </div>
                 <div class="bg-white border-2 border-[#14253D]/30 my-2 h-[60px]">
@@ -243,6 +255,50 @@ export default class SlowedController extends BaseController {
           <input class="hidden-input" type="file" accept=".mp3,.wav,audio/*" data-role="file-input" />
         </div>
       </div>
+    `;
+  }
+
+  isSlimeActive() {
+    return this.dragging || this.loadingFile;
+  }
+
+  dropHudTitle() {
+    if (this.loadingFile) return "SLIME_LOADING...";
+    if (this.dragging) return "RELEASE_TO_INGEST";
+    return "DRAG_DROP_AUDIO";
+  }
+
+  dropHudSubtitle() {
+    if (this.loadingFile) return "Decoding waveform + priming FX chain";
+    if (this.dragging) return "Drop MP3 or WAV into the vat";
+    return "Drop MP3/WAV here or click to browse";
+  }
+
+  renderDropHud(theme = "arcade") {
+    const slimeActive = this.isSlimeActive();
+    const isArcade = theme === "arcade";
+    const frameClass = isArcade
+      ? `${slimeActive ? "border-[#22C55E] bg-[#22C55E]/10 shadow-[0_0_18px_rgba(34,197,94,0.18)]" : "border-[#14253D]/20 bg-[#F8FAFC]"} text-[#14253D]`
+      : `${slimeActive ? "border-[#22C55E] bg-[#F0FDF4]" : "border-gray-200 bg-white"} text-gray-800`;
+    const iconWrapClass = isArcade
+      ? `${slimeActive ? "bg-[#22C55E] text-white" : "bg-[#14253D] text-white"}`
+      : `${slimeActive ? "bg-[#22C55E] text-white" : "bg-gray-900 text-white"}`;
+
+    return `
+      <button data-action="upload" class="relative w-full overflow-hidden rounded-lg border-2 px-3 py-3 text-left transition-all duration-200 ${frameClass}">
+        <div class="absolute -left-4 bottom-0 h-8 w-24 rounded-[999px] ${slimeActive ? "bg-[#22C55E]/35 animate-pulse" : "bg-[#FCA311]/10"} blur-md"></div>
+        <div class="absolute right-3 top-2 h-10 w-10 rounded-full ${slimeActive ? "bg-[#86EFAC]/35 animate-pulse" : "bg-[#CBD5E1]/30"} blur-lg"></div>
+        <div class="absolute inset-x-4 bottom-1 h-2 rounded-[999px] ${slimeActive ? "bg-[#22C55E]/55 animate-pulse" : "bg-[#E2E8F0]"}"></div>
+        <div class="relative flex items-center gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${iconWrapClass}">
+            ${icon(this.loadingFile ? "refresh" : "upload", 16, this.loadingFile ? "animate-spin" : slimeActive ? "animate-bounce" : "")}
+          </div>
+          <div class="min-w-0">
+            <p class="text-[9px] font-bold uppercase tracking-[0.18em] ${slimeActive ? "text-[#16A34A]" : isArcade ? "text-[#FCA311]" : "text-gray-500"}">${this.dropHudTitle()}</p>
+            <p class="mt-1 text-[10px] font-bold leading-tight">${this.dropHudSubtitle()}</p>
+          </div>
+        </div>
+      </button>
     `;
   }
 
@@ -373,22 +429,40 @@ export default class SlowedController extends BaseController {
       ["dragenter", "dragover"].forEach((type) => {
         dropzone.addEventListener(type, (event) => {
           event.preventDefault();
-          this.dragging = true;
-          this.rerender();
+          if (event.dataTransfer) {
+            event.dataTransfer.dropEffect = "copy";
+          }
+          if (type === "dragenter") {
+            this.dragDepth += 1;
+          }
+          if (!this.dragging) {
+            this.dragging = true;
+            this.rerender();
+          }
         });
       });
       ["dragleave", "dragend", "drop"].forEach((type) => {
-        dropzone.addEventListener(type, (event) => {
+        dropzone.addEventListener(type, async (event) => {
           event.preventDefault();
-          this.dragging = false;
           if (type === "drop") {
+            this.dragDepth = 0;
+            this.dragging = false;
             const file = event.dataTransfer && event.dataTransfer.files[0];
             if (file) {
-              this.handleFileUpload(file);
+              this.rerender();
+              await this.handleFileUpload(file);
             } else {
               this.rerender();
             }
-          } else {
+          } else if (type === "dragleave") {
+            this.dragDepth = Math.max(0, this.dragDepth - 1);
+            if (this.dragging && this.dragDepth === 0) {
+              this.dragging = false;
+              this.rerender();
+            }
+          } else if (this.dragging) {
+            this.dragDepth = 0;
+            this.dragging = false;
             this.rerender();
           }
         });
@@ -402,6 +476,7 @@ export default class SlowedController extends BaseController {
   async handleFileUpload(file) {
     try {
       this.isProcessing = true;
+      this.loadingFile = true;
       this.rerender();
       const audioContext = await ensureAudioContext();
       const buffer = await loadAudioFile(file, audioContext);
@@ -416,6 +491,7 @@ export default class SlowedController extends BaseController {
       this.app.notify(error.message || "Unable to read that audio file.");
     } finally {
       this.isProcessing = false;
+      this.loadingFile = false;
       this.rerender();
     }
   }
@@ -524,10 +600,20 @@ export default class SlowedController extends BaseController {
     cancelAnimationFrame(this.visualizerFrame);
     const animate = () => {
       if (this.signalBall) {
-        const level = averageAnalyserLevel(this.analyser);
-        const scale = 1 + level * 0.9;
-        this.signalBall.style.transform = `scale(${scale})`;
-        this.signalBall.style.filter = `drop-shadow(0 0 ${8 + level * 18}px rgba(252,163,17,0.75))`;
+        if (this.isSlimeActive()) {
+          const phase = performance.now() / 260;
+          const scale = 1.08 + ((Math.sin(phase) + 1) * 0.12);
+          const x = Math.sin(phase * 1.2) * 2.5;
+          const y = Math.cos(phase * 1.6) * 1.5;
+          const glow = 16 + ((Math.sin(phase * 1.8) + 1) * 10);
+          this.signalBall.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
+          this.signalBall.style.filter = `drop-shadow(0 0 ${glow}px rgba(34,197,94,0.85))`;
+        } else {
+          const level = averageAnalyserLevel(this.analyser);
+          const scale = 1 + level * 0.9;
+          this.signalBall.style.transform = `scale(${scale})`;
+          this.signalBall.style.filter = `drop-shadow(0 0 ${8 + level * 18}px rgba(252,163,17,0.75))`;
+        }
       }
       this.visualizerFrame = requestAnimationFrame(animate);
     };
