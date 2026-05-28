@@ -115,8 +115,8 @@ export default class FunMachineController extends BaseController {
           <div class="flex flex-col gap-6">
             <div class="flex justify-between items-center border-b-4 border-[#008F11] pb-4 gap-6">
               <div>
-                <h1 class="text-2xl font-black tracking-tighter uppercase text-[#00FF41]">Fun Machine</h1>
-                <p class="text-[6px] uppercase tracking-[0.4em] mt-2 text-[#008F11]">Video Game Edition v2.0</p>
+                <h1 class="text-2xl font-black tracking-tighter uppercase text-[#00FF41]">BOOSTER</h1>
+                <p class="text-[6px] uppercase tracking-[0.4em] mt-2 text-[#008F11]">808 Boost Lab v2.0</p>
               </div>
               <div class="relative w-40 h-40 bg-[#001100] border-4 border-[#008F11] rounded-full overflow-hidden flex items-center justify-center">
                 <canvas width="160" height="160" class="w-full h-full" data-role="slime"></canvas>
@@ -171,12 +171,12 @@ export default class FunMachineController extends BaseController {
                 </div>
               </div>
               <div class="bg-[#001100] border-4 border-[#008F11] p-6 space-y-8">
-                <p class="text-[8px] text-[#008F11] mb-2 uppercase font-bold tracking-widest">FX Matrix Parameters</p>
+                <p class="text-[8px] text-[#008F11] mb-2 uppercase font-bold tracking-widest">808 BOOST PARAMETERS</p>
                 ${this.funSlider("Lo-Fi Degrader (Bit Depth)", "bitDepth", this.bitDepth, 1, 16, 0.1, `${this.bitDepth.toFixed(1)} bit`)}
                 ${this.funSlider("Downsampler", "downsample", this.downsample, 1, 20, 1, `${this.downsample}x`)}
                 ${this.funSlider("Bit Crusher Distortion", "distortAmount", this.distortAmount, 0, 0.9, 0.01, `${Math.round(this.distortAmount * 100)}%`)}
                 ${this.funSlider("Formant Warp", "formantFreq", this.formantFreq, 200, 4000, 1, `${this.formantFreq} Hz`)}
-                ${this.funSlider("Gooey Bass Boost", "bassBoost", this.bassBoost, 0, 1, 0.01, `${Math.round(this.bassBoost * 100)}%`)}
+                ${this.funSlider("808 Bass Boost", "bassBoost", this.bassBoost, 0, 1, 0.01, `${Math.round(this.bassBoost * 100)}%`)}
               </div>
             </div>
           </div>
@@ -407,21 +407,24 @@ export default class FunMachineController extends BaseController {
         const width = this.slimeCanvas.width;
         const height = this.slimeCanvas.height;
         const level = this.isPlaying ? averageAnalyserLevel(this.analyser) : 0;
-        const radius = 40 + level * 40;
-        const offset = level * 20;
+        const driveAmount = this.getBoostDrive(level);
+        const radius = 36 + level * 28 + driveAmount * 22;
+        const wobble = 6 + driveAmount * 18;
         const centerX = width / 2;
         const centerY = height / 2;
+        const tone = this.getBoostColor(driveAmount, level);
 
         context.clearRect(0, 0, width, height);
         context.beginPath();
-        context.fillStyle = "#00FF41";
-        context.shadowBlur = 15;
-        context.shadowColor = "#00FF41";
+        context.fillStyle = tone.fill;
+        context.shadowBlur = 20 + driveAmount * 14;
+        context.shadowColor = tone.glow;
 
         for (let angleIndex = 0; angleIndex <= 360; angleIndex += 5) {
           const angle = (angleIndex * Math.PI) / 180;
-          const wave = Math.sin(angle * 4 + Date.now() * 0.005) * offset;
-          const distance = radius + wave;
+          const pulse = Math.sin(angle * (3 + driveAmount * 3) + Date.now() * (0.004 + driveAmount * 0.006));
+          const ripple = Math.cos(angle * 7 + Date.now() * 0.007) * (wobble * 0.38);
+          const distance = radius + pulse * wobble + ripple;
           const x = centerX + Math.cos(angle) * distance;
           const y = centerY + Math.sin(angle) * distance;
           if (angleIndex === 0) context.moveTo(x, y);
@@ -431,15 +434,39 @@ export default class FunMachineController extends BaseController {
         context.fill();
         context.shadowBlur = 0;
         context.fillStyle = "#000000";
-        const eyeOffset = 15 + level * 5;
+        const eyeOffset = 14 + driveAmount * 8;
         context.beginPath();
-        context.arc(centerX - eyeOffset, centerY - 10, 5, 0, Math.PI * 2);
-        context.arc(centerX + eyeOffset, centerY - 10, 5, 0, Math.PI * 2);
+        context.arc(centerX - eyeOffset, centerY - 8, 4.5 + driveAmount * 1.8, 0, Math.PI * 2);
+        context.arc(centerX + eyeOffset, centerY - 8, 4.5 + driveAmount * 1.8, 0, Math.PI * 2);
         context.fill();
+        context.strokeStyle = "rgba(0,0,0,0.8)";
+        context.lineWidth = 3;
+        context.beginPath();
+        context.arc(centerX, centerY + 10, 10 + driveAmount * 8, 0.15, Math.PI - 0.15);
+        context.stroke();
       }
       this.slimeFrame = requestAnimationFrame(animate);
     };
     this.slimeFrame = requestAnimationFrame(animate);
+  }
+
+  getBoostDrive(level) {
+    const bitDrive = clamp((16 - this.bitDepth) / 15, 0, 1);
+    const downsampleDrive = clamp((this.downsample - 1) / 19, 0, 1);
+    const formantDrive = clamp(Math.abs(this.formantFreq - 1100) / 2900, 0, 1);
+    const fxDrive = this.distortAmount * 0.45 + this.bassBoost * 0.35 + downsampleDrive * 0.2;
+    return clamp(bitDrive * 0.2 + fxDrive + formantDrive * 0.12 + level * 0.25, 0, 1);
+  }
+
+  getBoostColor(drive, level) {
+    const heat = clamp(drive * 0.82 + level * 0.3, 0, 1);
+    const red = Math.round(10 + heat * 245);
+    const green = Math.round(255 - heat * 175);
+    const blue = Math.round(65 - heat * 45);
+    return {
+      fill: `rgb(${red},${green},${Math.max(12, blue)})`,
+      glow: `rgba(${Math.min(255, red + 20)},${Math.max(40, green - 10)},${Math.max(0, blue)},0.95)`
+    };
   }
 
   buildProcessedBuffer(audioContext, buffer) {
@@ -517,8 +544,8 @@ export default class FunMachineController extends BaseController {
       bassFilter.connect(offlineContext.destination);
       source.start();
       const rendered = await offlineContext.startRendering();
-      const baseName = this.fileName ? this.fileName.replace(/\.[^.]+$/, "") : "fun_machine";
-      downloadBlob(new Blob([audioBufferToWav(rendered)], { type: "audio/wav" }), `fun_machine_${baseName}.wav`);
+      const baseName = this.fileName ? this.fileName.replace(/\.[^.]+$/, "") : "booster";
+      downloadBlob(new Blob([audioBufferToWav(rendered)], { type: "audio/wav" }), `booster_${baseName}.wav`);
       this.app.notify("Export finished.", "info");
     } catch (error) {
       this.app.notify(error.message || "Export failed.");

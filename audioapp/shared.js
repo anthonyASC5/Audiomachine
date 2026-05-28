@@ -1,7 +1,7 @@
 export const ROUTES = [
   { name: "Slowed + Reverb", path: "/" },
   { name: "Gross Beat", path: "/grossbeat" },
-  { name: "Fun Machine", path: "/funmachine" },
+  { name: "BOOSTER", path: "/funmachine" },
   { name: "Piano", path: "/piano" },
   { name: "About", path: "/about" }
 ];

@@ -13,7 +13,7 @@ export default class AboutController extends BaseController {
           <div class="grid grid-cols-1 gap-6">
             ${this.panel("Slowed + Reverb", "A tool for slowing audio and adding atmospheric reverb effects to create ambient or emotional sound textures.", "text-[#FCA311]")}
             ${this.panel("Gross Beat", "A time manipulation engine that creates stutter, repeat, reverse, and glitch effects similar to beat repeat tools used in music production.", "text-red-600")}
-            ${this.panel("Fun Machine", "A playful experimental section with creative effects like vinyl emulation, random chopping, bass boosting, and other sound transformations.", "text-green-600")}
+            ${this.panel("BOOSTER", "A playful 808-focused section with creative effects like vinyl emulation, random chopping, bass boosting, and other sound transformations.", "text-green-600")}
             ${this.panel("Piano", "An interactive browser-based piano keyboard that allows users to play notes using their computer keyboard or mouse.", "text-purple-600")}
           </div>
           <footer class="pt-12 flex justify-center">
